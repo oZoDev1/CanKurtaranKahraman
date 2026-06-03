@@ -12,6 +12,7 @@ import '../widgets/horizontal_road_animation.dart';
 import '../../data/models/option.dart';
 import '../../data/models/ordering_item.dart';
 import '../../data/database/database_helper.dart';
+import '../../core/services/sound_service.dart';
 
 class QuizScreen extends ConsumerStatefulWidget {
   const QuizScreen({super.key});
@@ -62,6 +63,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
+    // Ses servisini başlat
+    SoundService.instance.init();
   }
 
   @override
@@ -95,12 +98,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     if (correct) {
       // Doğru cevap → feedback göster, sonra sonraki soruya geç
+      SoundService.instance.playCorrect();
       _starController.repeat();
       setState(() {
         _showCorrectFeedback = true;
       });
     } else {
       // Yanlış cevap → açıklama göster, sonraki soruya geçme
+      SoundService.instance.playWrong();
       setState(() {
         _showExplanation = true;
         _explanationText = currentQuestion.explanation ?? 'Cevabın yanlış. Tekrar dene!';

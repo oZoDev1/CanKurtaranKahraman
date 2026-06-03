@@ -80,9 +80,9 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Yeni Modüle Geçiliyor...',
-                    style: TextStyle(
+                  Text(
+                    'Modül ${widget.fromNodeIndex + 1} Tamamlandı! ✅',
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -104,7 +104,7 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
 
                       return SizedBox(
                         width: roadWidth,
-                        height: 100,
+                        height: 120,
                         child: Stack(
                           alignment: Alignment.centerLeft,
                           clipBehavior: Clip.none,
@@ -139,7 +139,7 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
                                 ),
                               ),
                             ),
-                            // Noktalar
+                            // Noktalar ve modül etiketleri
                             ...List.generate(totalNodes, (index) {
                               final xPos = roadWidth - (index * segmentWidth);
                               final isPassed = index <= widget.fromNodeIndex;
@@ -153,33 +153,57 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
                               }
 
                               return Positioned(
-                                left: xPos - 12,
-                                top: 44,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 500),
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: nodeColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 3,
-                                    ),
-                                    boxShadow: isTarget
-                                        ? [
-                                            const BoxShadow(
-                                              color: Colors.orangeAccent,
-                                              blurRadius: 10,
-                                              spreadRadius: 2,
-                                            )
-                                          ]
-                                        : null,
+                                left: xPos - 30,
+                                top: 40,
+                                child: SizedBox(
+                                  width: 60,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Nokta
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 500),
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: nodeColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                          boxShadow: isTarget
+                                              ? [
+                                                  const BoxShadow(
+                                                    color: Colors.orangeAccent,
+                                                    blurRadius: 10,
+                                                    spreadRadius: 2,
+                                                  )
+                                                ]
+                                              : null,
+                                        ),
+                                        child: isPassed
+                                            ? const Icon(Icons.check,
+                                                size: 14, color: Colors.white)
+                                            : null,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      // Modül etiketi
+                                      Text(
+                                        'M${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: isPassed
+                                              ? AppColors.correct
+                                              : isTarget
+                                                  ? Colors.orangeAccent
+                                                  : Colors.grey.shade400,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ),
-                                  child: isPassed
-                                      ? const Icon(Icons.check,
-                                          size: 14, color: Colors.white)
-                                      : null,
                                 ),
                               );
                             }),
@@ -250,7 +274,7 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        'Modül ${widget.fromNodeIndex + 1} Başlıyor!',
+                        'Modül ${widget.fromNodeIndex + 2} Başlıyor!',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
