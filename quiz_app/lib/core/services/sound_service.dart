@@ -10,8 +10,10 @@ class SoundService {
   final AudioPlayer _buttonClickPlayer = AudioPlayer();
   final AudioPlayer _transitionPlayer = AudioPlayer();
   final AudioPlayer _barFillingPlayer = AudioPlayer();
+  final AudioPlayer _backgroundPlayer = AudioPlayer();
 
   bool _initialized = false;
+  bool _isStartingBackground = false;
 
   /// Ses dosyalarını önceden hazırla. Uygulama başlangıcında çağrılmalı.
   Future<void> init() async {
@@ -23,6 +25,7 @@ class SoundService {
     await _buttonClickPlayer.setSource(AssetSource('sounds/buttonClick.mp3'));
     await _transitionPlayer.setSource(AssetSource('sounds/ModullerArasiGecis.mp3'));
     await _barFillingPlayer.setSource(AssetSource('sounds/BarDoldurmaSesi.mp3'));
+    await _backgroundPlayer.setSource(AssetSource('sounds/BackgroundLoop.mp3'));
 
     // Release modunu ayarla: çalma bittikten sonra tekrar çalmaya hazır olsun
     await _correctPlayer.setReleaseMode(ReleaseMode.stop);
@@ -30,6 +33,7 @@ class SoundService {
     await _buttonClickPlayer.setReleaseMode(ReleaseMode.stop);
     await _transitionPlayer.setReleaseMode(ReleaseMode.stop);
     await _barFillingPlayer.setReleaseMode(ReleaseMode.stop);
+    await _backgroundPlayer.setReleaseMode(ReleaseMode.loop);
 
     _initialized = true;
   }
@@ -64,6 +68,33 @@ class SoundService {
     await _barFillingPlayer.play(AssetSource('sounds/BarDoldurmaSesi.mp3'));
   }
 
+  /// Arka plan müzik döngüsünü başlat veya kaldığı yerden devam ettir.
+  Future<void> playBackground({bool force = false}) async {
+    if (!_initialized) return;
+    if (!force && _backgroundPlayer.state == PlayerState.playing) return;
+    if (_isStartingBackground) return;
+
+    _isStartingBackground = true;
+    try {
+      if (_backgroundPlayer.state == PlayerState.paused || _backgroundPlayer.state == PlayerState.playing) {
+        await _backgroundPlayer.resume();
+      } else {
+        await _backgroundPlayer.play(AssetSource('sounds/BackgroundLoop.mp3'));
+      }
+    } catch (e) {
+      try {
+        await _backgroundPlayer.play(AssetSource('sounds/BackgroundLoop.mp3'));
+      } catch (_) {}
+    } finally {
+      _isStartingBackground = false;
+    }
+  }
+
+  /// Arka plan müzik döngüsünü duraklat.
+  Future<void> pauseBackground() async {
+    await _backgroundPlayer.pause();
+  }
+
   /// Kaynakları serbest bırak.
   Future<void> dispose() async {
     await _correctPlayer.dispose();
@@ -71,5 +102,6 @@ class SoundService {
     await _buttonClickPlayer.dispose();
     await _transitionPlayer.dispose();
     await _barFillingPlayer.dispose();
+    await _backgroundPlayer.dispose();
   }
 }

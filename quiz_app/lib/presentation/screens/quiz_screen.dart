@@ -77,29 +77,51 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   @override
   void dispose() {
     _starController.dispose();
+    SoundService.instance.pauseBackground();
     super.dispose();
   }
 
-  Future<void> _loadQuestionData(int questionId, String type) async {
+  Future<void> _loadQuestionData(int questionId, String type, {bool isFirstLoad = false}) async {
     final db = await DatabaseHelper.instance.database;
 
     if (type == 'test') {
       final optionMaps =
           await db.query('options', where: 'question_id = ?', whereArgs: [questionId]);
-      setState(() {
-        _currentOptions = optionMaps.map((m) => Option.fromMap(m)).toList();
-      });
+      if (mounted) {
+        setState(() {
+          _currentOptions = optionMaps.map((m) => Option.fromMap(m)).toList();
+        });
+      }
+      // Test sorusu yüklendi, arka plan müziğini devam ettir
+      if (isFirstLoad) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        SoundService.instance.playBackground(force: true);
+      } else {
+        SoundService.instance.playBackground();
+      }
     } else if (type == 'ordering') {
       final orderingMaps = await db.query('ordering_items',
           where: 'question_id = ?', whereArgs: [questionId]);
-      setState(() {
-        _currentOrderingItems =
-            orderingMaps.map((m) => OrderingItem.fromMap(m)).toList();
-      });
+      if (mounted) {
+        setState(() {
+          _currentOrderingItems =
+              orderingMaps.map((m) => OrderingItem.fromMap(m)).toList();
+        });
+      }
+      // Sıralama sorusu yüklendi, arka plan müziğini devam ettir
+      if (isFirstLoad) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        SoundService.instance.playBackground(force: true);
+      } else {
+        SoundService.instance.playBackground();
+      }
     }
   }
 
   void _submitAnswer(bool correct) {
+    // Onayla butonuna basıldığı an arka plan müziğini duraklat
+    SoundService.instance.pauseBackground();
+
     final state = ref.read(quizProvider);
     final currentQuestion = state.questions[state.currentIndex];
 
@@ -128,6 +150,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       _explanationText = null;
       _questionKey = UniqueKey(); // Widget'ı sıfırla
     });
+    // Tamam butonuna basınca arka plan müziğini devam ettir
+    SoundService.instance.playBackground();
   }
 
   /// Mevcut sorunun modülündeki pozisyonunu ve toplam soru sayısını hesaplar.
@@ -272,6 +296,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     }
 
     if (state.currentIndex >= state.questions.length) {
+      SoundService.instance.pauseBackground();
       return _buildResultScreen(state);
     }
 
@@ -478,8 +503,21 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
   void _loadQuestionDataIfNeeded(int questionId, String type) {
     if (_lastLoadedQuestionId != questionId) {
+      bool isFirstLoad = _lastLoadedQuestionId == null;
       _lastLoadedQuestionId = questionId;
-      _loadQuestionData(questionId, type);
+      if (type == 'true_false') {
+        // True/False sorusunun DB bağımlılığı olmadığı için direkt gösterilir, müzik hemen devam eder
+        _loadQuestionData(questionId, type, isFirstLoad: isFirstLoad);
+        if (isFirstLoad) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            SoundService.instance.playBackground(force: true);
+          });
+        } else {
+          SoundService.instance.playBackground();
+        }
+      } else {
+        _loadQuestionData(questionId, type, isFirstLoad: isFirstLoad);
+      }
     }
   }
 

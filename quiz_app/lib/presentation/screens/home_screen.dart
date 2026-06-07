@@ -3,8 +3,22 @@ import 'quiz_screen.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/sound_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Uygulama girişiyle birlikte ses servisini başlat ve arka plan müziğini çal
+    SoundService.instance.init().then((_) {
+      SoundService.instance.playBackground();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +101,10 @@ class HomeScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const QuizScreen()),
-                  );
+                  ).then((_) {
+                    // Quiz ekranından geri dönüldüğünde arka plan müziğini tekrar başlat/devam ettir
+                    SoundService.instance.playBackground();
+                  });
                 },
                 icon: const Icon(Icons.play_arrow_rounded, size: 28),
                 label: const Text(
