@@ -6,6 +6,7 @@ import '../providers/quiz_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/test/test_question_widget.dart';
 import '../widgets/ordering/ordering_question_widget.dart';
+import '../widgets/ordering/list_ordering_question_widget.dart';
 import '../widgets/true_false/true_false_question_widget.dart';
 import '../widgets/module_progress_bar.dart';
 import '../widgets/horizontal_road_animation.dart';
@@ -193,6 +194,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     setState(() {
       _showProgressBar = false;
+      _currentOptions = [];
+      _currentOrderingItems = [];
       _questionKey = UniqueKey();
     });
     ref.read(quizProvider.notifier).nextQuestion(true);
@@ -202,6 +205,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     if (!mounted) return;
     setState(() {
       _showRoadAnimation = false;
+      _currentOptions = [];
+      _currentOrderingItems = [];
       _questionKey = UniqueKey();
     });
     ref.read(quizProvider.notifier).nextQuestion(true);
@@ -234,6 +239,24 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
+          // TEST AMAÇLI İLERİ BUTONU
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _currentOptions = [];
+                _currentOrderingItems = [];
+                _questionKey = UniqueKey();
+              });
+              ref.read(quizProvider.notifier).nextQuestion(false);
+            },
+            child: const Text(
+              'İleri',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Center(
@@ -415,6 +438,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       if (_currentOrderingItems.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
+      if (question.quizGroupId == 4) {
+        return ListOrderingQuestionWidget(
+          key: key,
+          items: _currentOrderingItems,
+          onAnswerSelected: _submitAnswer,
+        );
+      }
       return OrderingQuestionWidget(
         key: key,
         items: _currentOrderingItems,
@@ -528,7 +558,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 const SizedBox(height: 16),
                 // 2. Sonraki Soru button below the robot
                 ElevatedButton(
-                  onPressed: _goToNextQuestion,
+                  onPressed: () {
+                    SoundService.instance.playButtonClick();
+                    _goToNextQuestion();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.correct,

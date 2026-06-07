@@ -7,6 +7,7 @@ class SoundService {
 
   final AudioPlayer _correctPlayer = AudioPlayer();
   final AudioPlayer _wrongPlayer = AudioPlayer();
+  final AudioPlayer _buttonClickPlayer = AudioPlayer();
 
   bool _initialized = false;
 
@@ -17,10 +18,12 @@ class SoundService {
     // Ses kaynağını ayarla — audioplayers AssetSource Flutter assets klasörünü kullanır
     await _correctPlayer.setSource(AssetSource('sounds/Correct.mp3'));
     await _wrongPlayer.setSource(AssetSource('sounds/Wrong.mp3'));
+    await _buttonClickPlayer.setSource(AssetSource('sounds/buttonClick.mp3'));
 
     // Release modunu ayarla: çalma bittikten sonra tekrar çalmaya hazır olsun
     await _correctPlayer.setReleaseMode(ReleaseMode.stop);
     await _wrongPlayer.setReleaseMode(ReleaseMode.stop);
+    await _buttonClickPlayer.setReleaseMode(ReleaseMode.stop);
 
     _initialized = true;
   }
@@ -37,9 +40,16 @@ class SoundService {
     await _wrongPlayer.play(AssetSource('sounds/Wrong.mp3'));
   }
 
+  /// Buton tıklama sesini çal.
+  Future<void> playButtonClick() async {
+    await _buttonClickPlayer.stop();
+    await _buttonClickPlayer.play(AssetSource('sounds/buttonClick.mp3'));
+  }
+
   /// Kaynakları serbest bırak.
   Future<void> dispose() async {
     await _correctPlayer.dispose();
     await _wrongPlayer.dispose();
+    await _buttonClickPlayer.dispose();
   }
 }

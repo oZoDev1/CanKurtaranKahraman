@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'quiz_screen.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/sound_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -82,6 +83,7 @@ class HomeScreen extends StatelessWidget {
                   shadowColor: AppColors.primary.withOpacity(0.5),
                 ),
                 onPressed: () {
+                  SoundService.instance.playButtonClick();
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const QuizScreen()),
@@ -89,9 +91,9 @@ class HomeScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.play_arrow_rounded, size: 28),
                 label: const Text(
-                  'Quiz\'e Başla!',
+                  'Başla',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.1,
                   ),
