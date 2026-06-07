@@ -301,27 +301,48 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget>
 
             // Soru kutusu — iki potanın ortasında, onayla butonunun eski konumunda
             Positioned(
-              left: leftHoopX + hoopW + 8,
-              right: w - rightHoopX + 8,
-              top: questionTopY + h * 0.05,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 3)),
-                  ],
-                ),
-                child: Text(
-                  _extractQuestionText(widget.questionText),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textMain,
+              left: leftHoopX + hoopW - 12,
+              right: w - rightHoopX - 12,
+              top: questionTopY + h * 0.04,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // 1. Question speech bubble
+                  Padding(
+                    padding: const EdgeInsets.only(left: 36.0, bottom: 10.0),
+                    child: CustomPaint(
+                      painter: QuestionBubblePainter(color: Colors.white.withOpacity(0.92)),
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 10.0,
+                          right: 10.0,
+                          top: 10.0,
+                          bottom: 22.0, // extra padding for the tail
+                        ),
+                        child: Text(
+                          _extractQuestionText(widget.questionText),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textMain,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  // 2. Thinking Robot image at bottom-left
+                  Positioned(
+                    left: 0,
+                    bottom: 0,
+                    child: Image.asset(
+                      'assets/images/3.png',
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -430,3 +451,45 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget>
     return text;
   }
 }
+
+// Custom Painter to draw a clean speech bubble with a tail pointing down-left for questions
+class QuestionBubblePainter extends CustomPainter {
+  final Color color;
+
+  QuestionBubblePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    const radius = 12.0;
+
+    // Rounded rectangle including tail at the bottom-left
+    path.moveTo(radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius));
+    path.lineTo(size.width, size.height - 12 - radius);
+    path.arcToPoint(Offset(size.width - radius, size.height - 12), radius: const Radius.circular(radius));
+
+    // Tail at bottom-left pointing down-left
+    path.lineTo(35, size.height - 12);
+    path.lineTo(12, size.height);
+    path.lineTo(20, size.height - 12);
+
+    path.lineTo(radius, size.height - 12);
+    path.arcToPoint(Offset(0, size.height - 12 - radius), radius: const Radius.circular(radius));
+    path.lineTo(0, radius);
+    path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
+    path.close();
+
+    canvas.drawShadow(path, Colors.black.withOpacity(0.15), 4.0, true);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

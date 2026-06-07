@@ -273,22 +273,40 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Soru metni
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBg,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 6,
-                            offset: Offset(0, 3))
-                      ],
-                    ),
-                    child: _buildQuestionText(currentQuestion.questionText, screenWidth, moduleTitle),
+                  // Soru metni + Robot Stack
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // 1. Question speech bubble
+                      Padding(
+                        padding: const EdgeInsets.only(left: 55.0, bottom: 15.0),
+                        child: CustomPaint(
+                          painter: QuestionBubblePainter(color: AppColors.cardBg),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: 16.0,
+                              right: 16.0,
+                              top: 16.0,
+                              bottom: 28.0, // extra padding for the tail
+                            ),
+                            child: _buildQuestionText(currentQuestion.questionText, screenWidth, moduleTitle),
+                          ),
+                        ),
+                      ),
+                      // 2. Thinking Robot image at bottom-left
+                      Positioned(
+                        left: 0,
+                        bottom: 0,
+                        child: Image.asset(
+                          'assets/images/3.png',
+                          width: 75,
+                          height: 75,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   // Soru içeriği
                   Expanded(
                     child: _buildQuestionContent(
@@ -428,75 +446,102 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             builder: (context, scale, child) {
               return Transform.scale(scale: scale, child: child);
             },
-            child: Container(
-              margin: const EdgeInsets.all(32),
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: AppColors.correct,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.correct.withOpacity(0.5),
-                    blurRadius: 20,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 3 dönen yıldız
-                  AnimatedBuilder(
-                    animation: _starController,
-                    builder: (context, child) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(3, (index) {
-                          final offset = index * 0.3;
-                          final rotation =
-                              (_starController.value + offset) * 2 * pi;
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Transform.rotate(
-                              angle: rotation,
-                              child: Icon(
-                                Icons.star,
-                                color: AppColors.star,
-                                size: index == 1 ? 60 : 45,
-                              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Robot & Green Speech Bubble Stack
+                SizedBox(
+                  width: 320,
+                  height: 230,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Robot image at bottom-left
+                      Positioned(
+                        left: 10,
+                        bottom: 0,
+                        child: Image.asset(
+                          'assets/images/4.png',
+                          width: 140,
+                          height: 140,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      // Green speech bubble at top-right
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: CustomPaint(
+                          painter: CorrectBubblePainter(color: AppColors.correct),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: 20.0,
+                              right: 20.0,
+                              top: 16.0,
+                              bottom: 31.0, // 15px tail + 16px padding
                             ),
-                          );
-                        }),
-                      );
-                    },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 3 dönen yıldız
+                                AnimatedBuilder(
+                                  animation: _starController,
+                                  builder: (context, child) {
+                                    return Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(3, (index) {
+                                        final offset = index * 0.3;
+                                        final rotation =
+                                            (_starController.value + offset) * 2 * pi;
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                          child: Transform.rotate(
+                                            angle: rotation,
+                                            child: Icon(
+                                              Icons.star,
+                                              color: AppColors.star,
+                                              size: index == 1 ? 42 : 30,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  message,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                ),
+                const SizedBox(height: 16),
+                // 2. Sonraki Soru button below the robot
+                ElevatedButton(
+                  onPressed: _goToNextQuestion,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.correct,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _goToNextQuestion,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.correct,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: const Text('Sonraki Soru →',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
+                  child: const Text('Sonraki Soru →',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
+                ),
+              ],
             ),
           ),
         ),
@@ -516,50 +561,64 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             return Transform.scale(scale: scale, child: child);
           },
           child: Container(
-            margin: const EdgeInsets.all(32),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: AppColors.wrong,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.wrong.withOpacity(0.5),
-                  blurRadius: 20,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
+            margin: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.info_outline, color: Colors.white, size: 60),
-                const SizedBox(height: 16),
-                const Text(
-                  'YANLIŞ!',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _explanationText ?? '',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      height: 1.4,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // 1. Crying Robot
+                    Image.asset(
+                      'assets/images/5.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.contain,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(width: 10),
+                    // 2. Red Speech Bubble
+                    Expanded(
+                      child: CustomPaint(
+                        painter: CorrectBubblePainter(color: AppColors.wrong),
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: 16.0,
+                            right: 16.0,
+                            top: 16.0,
+                            bottom: 31.0, // 15px tail + 16px padding
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.info_outline, color: Colors.white, size: 36),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'YANLIŞ!',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _explanationText ?? '',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                  height: 1.3,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
+                // 3. TAMAM button below the robot (centered in the column)
                 ElevatedButton(
                   onPressed: _dismissExplanation,
                   style: ElevatedButton.styleFrom(
@@ -655,3 +714,87 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     );
   }
 }
+
+// Custom Painter to draw a clean speech bubble with a tail pointing down-left for questions
+class QuestionBubblePainter extends CustomPainter {
+  final Color color;
+
+  QuestionBubblePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    const radius = 16.0;
+
+    // Rounded rectangle including tail at the bottom-left
+    path.moveTo(radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius));
+    path.lineTo(size.width, size.height - 12 - radius);
+    path.arcToPoint(Offset(size.width - radius, size.height - 12), radius: const Radius.circular(radius));
+
+    // Tail at bottom-left pointing down-left
+    path.lineTo(35, size.height - 12);
+    path.lineTo(12, size.height);
+    path.lineTo(20, size.height - 12);
+
+    path.lineTo(radius, size.height - 12);
+    path.arcToPoint(Offset(0, size.height - 12 - radius), radius: const Radius.circular(radius));
+    path.lineTo(0, radius);
+    path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
+    path.close();
+
+    canvas.drawShadow(path, Colors.black.withOpacity(0.15), 4.0, true);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Custom Painter to draw a clean speech bubble with a tail pointing down-left for correct answers
+class CorrectBubblePainter extends CustomPainter {
+  final Color color;
+
+  CorrectBubblePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    const radius = 20.0;
+
+    // Rounded rectangle including tail at the bottom-left
+    path.moveTo(radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius));
+    path.lineTo(size.width, size.height - 15 - radius);
+    path.arcToPoint(Offset(size.width - radius, size.height - 15), radius: const Radius.circular(radius));
+
+    // Tail at bottom-left pointing down-left
+    path.lineTo(55, size.height - 15);
+    path.lineTo(25, size.height);
+    path.lineTo(35, size.height - 15);
+
+    path.lineTo(radius, size.height - 15);
+    path.arcToPoint(Offset(0, size.height - 15 - radius), radius: const Radius.circular(radius));
+    path.lineTo(0, radius);
+    path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
+    path.close();
+
+    canvas.drawShadow(path, Colors.black.withOpacity(0.2), 6.0, true);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
