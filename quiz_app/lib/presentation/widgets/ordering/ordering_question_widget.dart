@@ -3,13 +3,10 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/models/ordering_item.dart';
 import '../../../core/services/sound_service.dart';
 
-/// Dondurma topu renk görselleri – şıklara sırayla atanır.
-const List<String> _scoopAssets = [
-  'assets/images/scoop_pink.png',
-  'assets/images/scoop_blue.png',
-  'assets/images/scoop_yellow.png',
-  'assets/images/scoop_green.png',
-  'assets/images/scoop_orange.png',
+const List<String> _balloonAssets = [
+  'assets/images/balloon_red.png',
+  'assets/images/balloon_blue.png',
+  'assets/images/balloon_yellow.png',
 ];
 
 class OrderingQuestionWidget extends StatefulWidget {
@@ -26,20 +23,50 @@ class OrderingQuestionWidget extends StatefulWidget {
   State<OrderingQuestionWidget> createState() => _OrderingQuestionWidgetState();
 }
 
-class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
-  // Her drop yuvası için yerleştirilen öğe (null = boş)
-  late Map<int, OrderingItem?> _slots; // slot index (0-based) -> item
-  // Henüz yerleştirilmemiş (sürüklenebilir) öğeler
+class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> with SingleTickerProviderStateMixin {
+  late Map<int, OrderingItem?> _slots;
   late List<OrderingItem> _availableItems;
-
   bool _hasError = false;
   Set<int> _wrongSlotIndices = {};
+
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _slots = {for (int i = 0; i < widget.items.length; i++) i: null};
     _availableItems = List.from(widget.items)..shuffle();
+
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-1.5, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeIn,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _slideController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant OrderingQuestionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.items != oldWidget.items) {
+      _slots = {for (int i = 0; i < widget.items.length; i++) i: null};
+      _availableItems = List.from(widget.items)..shuffle();
+      _hasError = false;
+      _wrongSlotIndices = {};
+      _slideController.reset();
+    }
   }
 
   void _checkAnswer() {
@@ -57,11 +84,10 @@ class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
       }
     }
 
-    // Boş slot varsa kullanıcıyı uyar
     if (_slots.values.any((v) => v == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Lütfen tüm dondurmaları yerleştiriniz!'),
+          content: Text('Lütfen tüm balonları vagonlara yerleştiriniz!'),
           duration: Duration(seconds: 2),
           backgroundColor: Colors.orange,
         ),
@@ -70,7 +96,9 @@ class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
     }
 
     if (isCorrect) {
-      widget.onAnswerSelected(true);
+      _slideController.forward().then((_) {
+        widget.onAnswerSelected(true);
+      });
     } else {
       setState(() {
         _hasError = true;
@@ -88,31 +116,24 @@ class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
     }
   }
 
-  /// Bir öğeyi slot'a yerleştir
   void _placeItem(int slotIndex, OrderingItem item) {
     setState(() {
-      // Eğer bu dondurma zaten başka bir slot'taysa, oradan çıkar
       _slots.forEach((key, value) {
         if (value?.id == item.id) {
           _slots[key] = null;
         }
       });
 
-      // Eğer hedef slot doluysa, oradaki dondurmayı geri available'a koy
       final existingItem = _slots[slotIndex];
       if (existingItem != null) {
         _availableItems.add(existingItem);
       }
 
-      // Dondurmayı slot'a yerleştir
       _slots[slotIndex] = item;
-
-      // Available listesinden çıkar
       _availableItems.removeWhere((i) => i.id == item.id);
     });
   }
 
-  /// Bir öğeyi slot'tan geri çıkar
   void _removeFromSlot(int slotIndex) {
     setState(() {
       final item = _slots[slotIndex];
@@ -123,41 +144,34 @@ class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
     });
   }
 
-  String _getScoopAsset(int index) {
-    return _scoopAssets[index % _scoopAssets.length];
+  String _getBalloonAsset(int index) {
+    return _balloonAssets[index % _balloonAssets.length];
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
     final itemCount = widget.items.length;
-
-    // Şık sayısına ve ekran yüksekliğine göre boyutları ölçeklendiriyoruz
-    final isCompact = itemCount > 3 || screenHeight < 700;
-    final scoopSize = isCompact ? 70.0 : 80.0;
-    
-    // Külah boyutları
-    final coneWidth = scoopSize * 1.15;
-    final coneHeight = coneWidth * 1.25;
 
     return Column(
       children: [
         const SizedBox(height: 8),
 
-        // ── DONDURMA TOPLARI ALANI (Drag Zone) ──
+        // ── BALONLAR ALANI (Drag Zone) ──
         Expanded(
-          child: _buildScoopArea(scoopSize, itemCount),
+          child: _buildBalloonsArea(),
         ),
-
-        const SizedBox(height: 12),
-
-        // ── DONDURMA KULESİ (Drop Zone) ──
-        _buildIceCreamCone(scoopSize, coneHeight, itemCount),
 
         const SizedBox(height: 16),
 
-        // ── ONAYLA BUTONU ──
+        // ── TREN VE VAGONLAR (Drop Zone) ──
+        SlideTransition(
+          position: _slideAnimation,
+          child: _buildTrainArea(itemCount),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Onayla Butonu
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: ElevatedButton(
@@ -184,323 +198,186 @@ class _OrderingQuestionWidgetState extends State<OrderingQuestionWidget> {
     );
   }
 
-  Offset _getSlotOffset(int slotIndex, double scoopSize, double coneHeight) {
-    // 1 numaralı yuvayı (sağdaki sarı top gibi) referans alarak konumlandırıyoruz
-    final double baseLeft = scoopSize * 0.60;
-    final double baseBottom = coneHeight - scoopSize * 0.70;
-
-    if (slotIndex == 0) {
-      // 1 numara: en altta sağa yakın (mevcut dikey hizası korundu)
-      return Offset(baseLeft, baseBottom);
-    } else if (slotIndex == 1) {
-      // 2 numara: 1 numaranın sol çaprazında ve birazcık aşağısında (görseldeki yeşil top gibi)
-      return Offset(
-        baseLeft - scoopSize * 0.55,
-        baseBottom - scoopSize * 0.08,
-      );
-    } else if (slotIndex == 2) {
-      // 3 numara: 2 numara ile 1 numaranın tam yatay ortasına hizalanmış ve kesişim yerine daha yakın olması için aşağı indirildi
-      return Offset(
-        baseLeft - scoopSize * 0.275,
-        baseBottom + scoopSize * 0.45,
-      );
-    } else {
-      // 4 ve 5 numara (varsa): 3 numaranın üzerine dikey yığılmaya devam eder
-      final double scoopOverlap = scoopSize * 0.40;
-      return Offset(
-        baseLeft - scoopSize * 0.275,
-        baseBottom + scoopSize * 0.45 + (slotIndex - 2) * (scoopSize - scoopOverlap),
-      );
-    }
+  Widget _buildBalloonsArea() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.lightBlue.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue.shade100, width: 2),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
+            children: _availableItems.map((item) {
+              final asset = _getBalloonAsset(item.correctOrder - 1);
+              return Draggable<OrderingItem>(
+                data: item,
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: _buildBalloon(item, asset, isDragging: true),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
+                  child: _buildBalloon(item, asset),
+                ),
+                child: _buildBalloon(item, asset),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
   }
 
-  /// Dondurma külahı ve üst üste binen drop yuvaları (Görsel referanslı üçgen yapısı)
-  Widget _buildIceCreamCone(double scoopSize, double coneHeight, int itemCount) {
-    final isWrong = _hasError;
-    final double coneWidth = scoopSize * 1.15;
-    
-    // En yüksek yuvanın bottom koordinatına göre container yüksekliğini dinamik belirliyoruz
-    double maxBottom = 0;
-    for (int i = 0; i < itemCount; i++) {
-      final offset = _getSlotOffset(i, scoopSize, coneHeight);
-      if (offset.dy > maxBottom) {
-        maxBottom = offset.dy;
-      }
-    }
-    final double towerHeight = maxBottom + scoopSize + 10.0;
-    final double towerWidth = scoopSize * 1.7;
-
-    return SizedBox(
-      width: towerWidth,
-      height: towerHeight,
-      child: Stack(
-        children: [
-          // Külah (En altta, bottom: 0, sol koordinatı iki topu ortalayacak şekilde hizalandı)
-          Positioned(
-            bottom: 0,
-            left: scoopSize * 0.25,
-            width: coneWidth,
-            height: coneHeight,
-            child: Image.asset(
-              'assets/images/ice_cream_cone.png',
-              fit: BoxFit.contain,
+  Widget _buildBalloon(OrderingItem item, String assetPath, {bool isDragging = false, bool inSlot = false}) {
+    final size = isDragging ? 120.0 : 100.0;
+    return Container(
+      width: inSlot ? double.infinity : size,
+      height: inSlot ? double.infinity : size * 1.2,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(assetPath),
+          fit: BoxFit.contain,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.only(
+            // Centering text visually in the middle of the balloon sphere
+            bottom: inSlot ? 8.0 : size * 0.08,
+            left: 8,
+            right: 8,
+          ),
+          child: Text(
+            item.itemText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isDragging ? 14 : (inSlot ? 11 : 12),
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: const [
+                Shadow(
+                  color: Colors.black87,
+                  blurRadius: 4,
+                  offset: Offset(1.5, 1.5),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
 
-          // Üst üste binen dondurma yuvaları
-          ...List.generate(itemCount, (slotIndex) {
-            final placedItem = _slots[slotIndex];
-            final isSlotWrong = isWrong && _wrongSlotIndices.contains(slotIndex);
+  Widget _buildTrainArea(int itemCount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: AspectRatio(
+        aspectRatio: 1024 / 561,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            final h = constraints.maxHeight;
+            
+            // Oranlar: Sarı Vagon (0.305), Mavi Vagon (0.49), Yeşil Vagon (0.675)
+            final leftOffsets = [0.305, 0.49, 0.675];
+            
+            return Stack(
+              children: [
+                // Tren Arkaplanı
+                Image.asset(
+                  'assets/images/FullTren.png',
+                  width: w,
+                  height: h,
+                  fit: BoxFit.contain,
+                ),
+                
+                // Vagonların Üzerindeki Bırakma Yuvaları
+                for (int i = 0; i < itemCount && i < 3; i++)
+                  Positioned(
+                    left: w * leftOffsets[i],
+                    top: h * 0.45,
+                    width: w * 0.165,
+                    height: h * 0.28,
+                    child: _buildDropSlot(i),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-            final offset = _getSlotOffset(slotIndex, scoopSize, coneHeight);
+  Widget _buildDropSlot(int slotIndex) {
+    final placedItem = _slots[slotIndex];
+    final isWrong = _hasError && _wrongSlotIndices.contains(slotIndex);
 
-            return Positioned(
-              left: offset.dx,
-              bottom: offset.dy,
-              width: scoopSize,
-              height: scoopSize,
-              child: DragTarget<OrderingItem>(
-                onWillAcceptWithDetails: (details) => true,
-                onAcceptWithDetails: (details) {
-                  _placeItem(slotIndex, details.data);
-                },
-                builder: (context, candidateData, rejectedData) {
-                  final isHovering = candidateData.isNotEmpty;
+    return DragTarget<OrderingItem>(
+      onWillAcceptWithDetails: (details) => true,
+      onAcceptWithDetails: (details) {
+        _placeItem(slotIndex, details.data);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
 
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    decoration: BoxDecoration(
-                      color: isSlotWrong
-                          ? AppColors.wrong.withOpacity(0.2)
-                          : isHovering
-                              ? AppColors.primary.withOpacity(0.25)
-                              : placedItem != null
-                                  ? Colors.transparent
-                                  : Colors.white.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSlotWrong
-                            ? AppColors.wrong
-                            : isHovering
-                                ? AppColors.primary
-                                : placedItem != null
-                                    ? Colors.transparent
-                                    : Colors.grey.shade400.withOpacity(0.8),
-                        width: isSlotWrong ? 3.5 : isHovering ? 2.5 : placedItem != null ? 0.0 : 2.0,
+        return GestureDetector(
+          onTap: () {
+            if (placedItem != null) {
+              _removeFromSlot(slotIndex);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isWrong
+                  ? Colors.red.withOpacity(0.4)
+                  : isHovering
+                      ? Colors.blue.withOpacity(0.4)
+                      : placedItem != null
+                          ? Colors.transparent
+                          : Colors.white.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isWrong
+                    ? Colors.red
+                    : isHovering
+                        ? Colors.blue
+                        : placedItem != null
+                            ? Colors.transparent
+                            : Colors.white.withOpacity(0.6),
+                width: 2,
+              ),
+            ),
+            child: placedItem != null
+                ? _buildBalloon(
+                    placedItem,
+                    _getBalloonAsset(placedItem.correctOrder - 1),
+                    inSlot: true,
+                  )
+                : Center(
+                    child: Text(
+                      '${slotIndex + 1}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white.withOpacity(0.9),
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 2,
+                            offset: Offset(1, 1),
+                          )
+                        ],
                       ),
-                      boxShadow: [
-                        if (isSlotWrong)
-                          BoxShadow(
-                            color: AppColors.wrong.withOpacity(0.4),
-                            blurRadius: 8,
-                          )
-                        else if (isHovering)
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 6,
-                          )
-                        else if (placedItem == null)
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                          ),
-                      ],
                     ),
-                    child: placedItem != null
-                        ? _buildPlacedScoop(slotIndex, placedItem, scoopSize)
-                        : _buildEmptySlot(slotIndex, scoopSize),
-                  );
-                },
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  /// Boş dondurma yuvası içeriği
-  Widget _buildEmptySlot(int slotIndex, double size) {
-    return Center(
-      child: Text(
-        '${slotIndex + 1}',
-        style: TextStyle(
-          fontSize: size * 0.3,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey.shade500,
-        ),
-      ),
-    );
-  }
-
-  /// Dolu yuvadaki dondurma topu
-  Widget _buildPlacedScoop(int slotIndex, OrderingItem item, double size) {
-    final originalIndex = widget.items.indexWhere((i) => i.id == item.id);
-    final scoopAsset = _getScoopAsset(originalIndex);
-
-    return GestureDetector(
-      onTap: () => _removeFromSlot(slotIndex),
-      child: ClipOval(
-        child: Stack(
-          children: [
-            // Dondurma topu görseli
-            Positioned.fill(
-              child: Image.asset(
-                scoopAsset,
-                fit: BoxFit.cover,
-              ),
-            ),
-            // Ortalanmış gölgeli beyaz yazı
-            Positioned.fill(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                  child: Text(
-                    item.itemText,
-                    style: TextStyle(
-                      fontSize: (size * 0.17).clamp(10.0, 15.0),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          offset: const Offset(-1.2, -1.2),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(1.2, -1.2),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(1.2, 1.2),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(-1.2, 1.2),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Seçenekler alanı (Drag zone)
-  Widget _buildScoopArea(double scoopSize, int itemCount) {
-    if (_availableItems.isEmpty) {
-      return Center(
-        child: Text(
-          'Tüm dondurmalar yerleştirildi!\nSırayı kontrol et ve onayla.',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.textMain.withOpacity(0.6),
-            fontWeight: FontWeight.w500,
           ),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-
-    final dragScoopSize = scoopSize * 1.15;
-
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: _availableItems.map((item) {
-            final originalIndex = widget.items.indexWhere((i) => i.id == item.id);
-            final scoopAsset = _getScoopAsset(originalIndex);
-
-            return Draggable<OrderingItem>(
-              data: item,
-              feedback: Material(
-                color: Colors.transparent,
-                child: _buildScoopCard(item, scoopAsset, dragScoopSize, isDragging: true),
-              ),
-              childWhenDragging: Opacity(
-                opacity: 0.3,
-                child: _buildScoopCard(item, scoopAsset, dragScoopSize),
-              ),
-              child: _buildScoopCard(item, scoopAsset, dragScoopSize),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  /// Tekil dondurma topu kartı
-  Widget _buildScoopCard(OrderingItem item, String scoopAsset, double size, {bool isDragging = false}) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: size,
-      height: size,
-      color: Colors.transparent,
-      child: ClipOval(
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Görsel
-            Positioned.fill(
-              child: Opacity(
-                opacity: isDragging ? 0.7 : 1.0,
-                child: Image.asset(
-                  scoopAsset,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            // Ortalanmış gölgeli beyaz yazı
-            Positioned.fill(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Text(
-                    item.itemText,
-                    style: TextStyle(
-                      fontSize: (size * 0.16).clamp(11.0, 16.0),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          offset: const Offset(-1.5, -1.5),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(1.5, -1.5),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(1.5, 1.5),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                        Shadow(
-                          offset: const Offset(-1.5, 1.5),
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
