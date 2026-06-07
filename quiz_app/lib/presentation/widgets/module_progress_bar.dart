@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/sound_service.dart';
 
 /// Modül ilerlemesini gösteren dikey çubuk widget'ı.
 /// Modüldeki toplam soru sayısına göre dilimlenmiş bir bar gösterir.
@@ -56,6 +57,10 @@ class _ModuleProgressBarState extends State<ModuleProgressBar>
   Future<void> _startAnimation() async {
     await _fadeInController.forward();
     await Future.delayed(const Duration(milliseconds: 200));
+
+    // Bar doldurma sesini çal
+    SoundService.instance.playBarFilling();
+
     await _fillController.forward();
     await Future.delayed(const Duration(milliseconds: 600));
     await _fadeOutController.forward();

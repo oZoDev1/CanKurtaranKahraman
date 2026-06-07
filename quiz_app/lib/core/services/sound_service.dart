@@ -9,6 +9,7 @@ class SoundService {
   final AudioPlayer _wrongPlayer = AudioPlayer();
   final AudioPlayer _buttonClickPlayer = AudioPlayer();
   final AudioPlayer _transitionPlayer = AudioPlayer();
+  final AudioPlayer _barFillingPlayer = AudioPlayer();
 
   bool _initialized = false;
 
@@ -21,12 +22,14 @@ class SoundService {
     await _wrongPlayer.setSource(AssetSource('sounds/Wrong.mp3'));
     await _buttonClickPlayer.setSource(AssetSource('sounds/buttonClick.mp3'));
     await _transitionPlayer.setSource(AssetSource('sounds/ModullerArasiGecis.mp3'));
+    await _barFillingPlayer.setSource(AssetSource('sounds/BarDoldurmaSesi.mp3'));
 
     // Release modunu ayarla: çalma bittikten sonra tekrar çalmaya hazır olsun
     await _correctPlayer.setReleaseMode(ReleaseMode.stop);
     await _wrongPlayer.setReleaseMode(ReleaseMode.stop);
     await _buttonClickPlayer.setReleaseMode(ReleaseMode.stop);
     await _transitionPlayer.setReleaseMode(ReleaseMode.stop);
+    await _barFillingPlayer.setReleaseMode(ReleaseMode.stop);
 
     _initialized = true;
   }
@@ -55,11 +58,18 @@ class SoundService {
     await _transitionPlayer.play(AssetSource('sounds/ModullerArasiGecis.mp3'));
   }
 
+  /// Bar doldurma sesini çal.
+  Future<void> playBarFilling() async {
+    await _barFillingPlayer.stop();
+    await _barFillingPlayer.play(AssetSource('sounds/BarDoldurmaSesi.mp3'));
+  }
+
   /// Kaynakları serbest bırak.
   Future<void> dispose() async {
     await _correctPlayer.dispose();
     await _wrongPlayer.dispose();
     await _buttonClickPlayer.dispose();
     await _transitionPlayer.dispose();
+    await _barFillingPlayer.dispose();
   }
 }
