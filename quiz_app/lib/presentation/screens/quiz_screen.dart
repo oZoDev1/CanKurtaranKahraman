@@ -10,6 +10,7 @@ import '../widgets/ordering/list_ordering_question_widget.dart';
 import '../widgets/true_false/true_false_question_widget.dart';
 import '../widgets/module_progress_bar.dart';
 import '../widgets/horizontal_road_animation.dart';
+import '../widgets/module_three_road_animation.dart';
 import '../../data/models/option.dart';
 import '../../data/models/ordering_item.dart';
 import '../../data/database/database_helper.dart';
@@ -32,6 +33,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   bool _showProgressBar = false;
   int _progressBarTotal = 0;
   int _progressBarCompleted = 0;
+
+  // Modül 3 yol animasyonu durumu
+  bool _showModuleThreeRoadAnimation = false;
+  int _moduleThreeRoadTotal = 0;
+  int _moduleThreeRoadCompleted = 0;
 
   // Modül geçiş yol animasyonu
   bool _showRoadAnimation = false;
@@ -159,13 +165,24 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     // Modül ilerlemesini hesapla
     final (completed, total) = _calculateModuleProgress();
+    final state = ref.read(quizProvider);
+    final currentQuestion = state.questions[state.currentIndex];
 
-    setState(() {
-      _showCorrectFeedback = false;
-      _showProgressBar = true;
-      _progressBarTotal = total;
-      _progressBarCompleted = completed;
-    });
+    if (currentQuestion.quizGroupId == 3) {
+      setState(() {
+        _showCorrectFeedback = false;
+        _showModuleThreeRoadAnimation = true;
+        _moduleThreeRoadTotal = total;
+        _moduleThreeRoadCompleted = completed;
+      });
+    } else {
+      setState(() {
+        _showCorrectFeedback = false;
+        _showProgressBar = true;
+        _progressBarTotal = total;
+        _progressBarCompleted = completed;
+      });
+    }
   }
 
   /// Progress bar animasyonu tamamlandığında çağrılır.
@@ -194,6 +211,38 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     setState(() {
       _showProgressBar = false;
+      _currentOptions = [];
+      _currentOrderingItems = [];
+      _questionKey = UniqueKey();
+    });
+    ref.read(quizProvider.notifier).nextQuestion(true);
+  }
+
+  void _onModuleThreeRoadAnimationComplete() {
+    if (!mounted) return;
+
+    if (_moduleThreeRoadCompleted == _moduleThreeRoadTotal) {
+      // Modül bitti. 
+      final state = ref.read(quizProvider);
+      final currentQuestion = state.questions[state.currentIndex];
+      final moduleIds = state.questions.map((q) => q.quizGroupId).toSet().toList();
+      final totalModules = moduleIds.length;
+      final currentModuleIndex = moduleIds.indexOf(currentQuestion.quizGroupId);
+
+      // Eğer son modül değilse yolu göster
+      if (currentModuleIndex < totalModules - 1) {
+        setState(() {
+          _showModuleThreeRoadAnimation = false;
+          _showRoadAnimation = true;
+          _totalModules = totalModules;
+          _roadFromNodeIndex = currentModuleIndex;
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _showModuleThreeRoadAnimation = false;
       _currentOptions = [];
       _currentOrderingItems = [];
       _questionKey = UniqueKey();
@@ -349,6 +398,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 totalQuestions: _progressBarTotal,
                 completedCount: _progressBarCompleted,
                 onAnimationComplete: _onProgressBarComplete,
+              ),
+            ),
+
+          // Modül 3 yol ve araba animasyonu overlay
+          if (_showModuleThreeRoadAnimation)
+            Positioned.fill(
+              child: ModuleThreeRoadAnimation(
+                totalQuestions: _moduleThreeRoadTotal,
+                completedCount: _moduleThreeRoadCompleted,
+                onComplete: _onModuleThreeRoadAnimationComplete,
               ),
             ),
 
