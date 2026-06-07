@@ -156,11 +156,11 @@ class SeedData {
       'quiz_group_id': 4,
       'order_in_quiz': 33
     });
-    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Acil durumu erken fark etme ve 112’yi arama', 'drag_image_path': 'assets/images/module4_1.jpg', 'drop_image_path': null, 'correct_order': 1});
-    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Erken temel yaşam desteği', 'drag_image_path': 'assets/images/module4_2.jpg', 'drop_image_path': null, 'correct_order': 2});
-    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Erken otomatik eksternal defibrilatör kullanımı', 'drag_image_path': 'assets/images/module4_3.jpg', 'drop_image_path': null, 'correct_order': 3});
-    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'İleri yaşam desteği', 'drag_image_path': 'assets/images/module4_4.jpg', 'drop_image_path': null, 'correct_order': 4});
-    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'İyileşme ve bakım süreci', 'drag_image_path': 'assets/images/module4_5.jpg', 'drop_image_path': null, 'correct_order': 5});
+    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Acil durumu erken fark etme ve 112’yi arama', 'drag_image_path': 'assets/images/module4_1.png', 'drop_image_path': null, 'correct_order': 1});
+    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Erken temel yaşam desteği', 'drag_image_path': 'assets/images/module4_2.png', 'drop_image_path': null, 'correct_order': 2});
+    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'Erken otomatik eksternal defibrilatör kullanımı', 'drag_image_path': 'assets/images/module4_3.png', 'drop_image_path': null, 'correct_order': 3});
+    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'İleri yaşam desteği', 'drag_image_path': 'assets/images/module4_4.png', 'drop_image_path': null, 'correct_order': 4});
+    await db.insert('ordering_items', {'question_id': 33, 'item_text': 'İyileşme ve bakım süreci', 'drag_image_path': 'assets/images/module4_5.png', 'drop_image_path': null, 'correct_order': 5});
   }
 
   static Future<void> insertVersion2Data(Database db) async {}

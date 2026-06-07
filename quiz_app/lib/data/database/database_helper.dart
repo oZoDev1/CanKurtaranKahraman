@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5, // Modül 4 güncellemeleri için versiyon artırıldı
+      version: 6, // Modül 4 PNG görselleri için versiyon artırıldı
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
