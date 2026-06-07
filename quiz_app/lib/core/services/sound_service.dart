@@ -8,6 +8,7 @@ class SoundService {
   final AudioPlayer _correctPlayer = AudioPlayer();
   final AudioPlayer _wrongPlayer = AudioPlayer();
   final AudioPlayer _buttonClickPlayer = AudioPlayer();
+  final AudioPlayer _transitionPlayer = AudioPlayer();
 
   bool _initialized = false;
 
@@ -19,11 +20,13 @@ class SoundService {
     await _correctPlayer.setSource(AssetSource('sounds/Correct.mp3'));
     await _wrongPlayer.setSource(AssetSource('sounds/Wrong.mp3'));
     await _buttonClickPlayer.setSource(AssetSource('sounds/buttonClick.mp3'));
+    await _transitionPlayer.setSource(AssetSource('sounds/ModullerArasiGecis.mp3'));
 
     // Release modunu ayarla: çalma bittikten sonra tekrar çalmaya hazır olsun
     await _correctPlayer.setReleaseMode(ReleaseMode.stop);
     await _wrongPlayer.setReleaseMode(ReleaseMode.stop);
     await _buttonClickPlayer.setReleaseMode(ReleaseMode.stop);
+    await _transitionPlayer.setReleaseMode(ReleaseMode.stop);
 
     _initialized = true;
   }
@@ -46,10 +49,17 @@ class SoundService {
     await _buttonClickPlayer.play(AssetSource('sounds/buttonClick.mp3'));
   }
 
+  /// Modüller arası geçiş sesini çal.
+  Future<void> playTransition() async {
+    await _transitionPlayer.stop();
+    await _transitionPlayer.play(AssetSource('sounds/ModullerArasiGecis.mp3'));
+  }
+
   /// Kaynakları serbest bırak.
   Future<void> dispose() async {
     await _correctPlayer.dispose();
     await _wrongPlayer.dispose();
     await _buttonClickPlayer.dispose();
+    await _transitionPlayer.dispose();
   }
 }

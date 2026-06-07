@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/sound_service.dart';
 
 /// Yatay yol animasyonu widget'ı.
 /// Modüller arası geçişte ambulansın bir önceki modül noktasından yeni modül noktasına gitmesini sağlar.
@@ -48,6 +49,9 @@ class _HorizontalRoadAnimationState extends State<HorizontalRoadAnimation>
   }
 
   Future<void> _startAnimation() async {
+    // Modüller arası geçiş sesini çal
+    SoundService.instance.playTransition();
+
     // Kısa bir bekleme
     await Future.delayed(const Duration(milliseconds: 500));
     _confettiController.play(); // Konfeti patlat!
