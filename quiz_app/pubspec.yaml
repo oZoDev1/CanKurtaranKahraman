@@ -12,10 +12,10 @@ dependencies:
   flutter_riverpod: ^2.5.1
   sqflite: ^2.3.0
   path_provider: ^2.1.2
-  path: ^1.9.0
+  path: ^1.8.3
   equatable: ^2.0.5
   confetti: ^0.8.0
-  audioplayers: ^6.1.0
+  audioplayers: ^5.2.1
 
 dev_dependencies:
   flutter_test:
