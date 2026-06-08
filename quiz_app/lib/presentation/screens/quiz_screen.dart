@@ -313,21 +313,24 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
-          // TEST AMAÇLI İLERİ BUTONU
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _currentOptions = [];
-                _currentOrderingItems = [];
-                _questionKey = UniqueKey();
-              });
-              ref.read(quizProvider.notifier).nextQuestion(false);
-            },
-            child: const Text(
-              'İleri',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          // TEST AMAÇLI İLERİ BUTONU (Gizlendi)
+          Visibility(
+            visible: false,
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _currentOptions = [];
+                  _currentOrderingItems = [];
+                  _questionKey = UniqueKey();
+                });
+                ref.read(quizProvider.notifier).nextQuestion(false);
+              },
+              child: const Text(
+                'İleri',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
